@@ -10,6 +10,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DataProviders", "DataProvid
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UniversiteDomain", "UniversiteDomain\UniversiteDomain.csproj", "{AD86C457-5BA7-45F6-AFB2-D39EF466D98E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UniversiteDomainUnitTest", "UniversiteDomainUnitTest\UniversiteDomainUnitTest.csproj", "{8AB6EE7A-ED7C-4113-A04A-CDCC5E484437}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -17,11 +19,16 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{AD86C457-5BA7-45F6-AFB2-D39EF466D98E} = {C3BECF35-A010-479A-B1E0-E8468DDBF6E1}
+		{8AB6EE7A-ED7C-4113-A04A-CDCC5E484437} = {ABD17386-1349-44E8-8AEE-BBA5049283A9}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{AD86C457-5BA7-45F6-AFB2-D39EF466D98E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{AD86C457-5BA7-45F6-AFB2-D39EF466D98E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AD86C457-5BA7-45F6-AFB2-D39EF466D98E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AD86C457-5BA7-45F6-AFB2-D39EF466D98E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8AB6EE7A-ED7C-4113-A04A-CDCC5E484437}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8AB6EE7A-ED7C-4113-A04A-CDCC5E484437}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8AB6EE7A-ED7C-4113-A04A-CDCC5E484437}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8AB6EE7A-ED7C-4113-A04A-CDCC5E484437}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
