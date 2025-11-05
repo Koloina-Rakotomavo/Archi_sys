@@ -1,6 +1,10 @@
-namespace UniversiteDomain.DataAdapters;
+using UniversiteDomain.Entities;
 
-public interface IParcoursRepository
+namespace UniversiteDomain.DataAdapters
 {
-    
+    public interface IParcoursRepository : IRepository<Parcours>
+    {
+        // On ajoute plus tard les méthodes spécifiques à Parcours
+        // (ex: Task<List<Parcours>> FindByAnneeAsync(int annee); etc.)
+    }
 }
