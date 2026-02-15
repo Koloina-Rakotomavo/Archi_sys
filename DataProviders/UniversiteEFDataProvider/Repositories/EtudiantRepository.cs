@@ -37,4 +37,19 @@ public class EtudiantRepository(UniversiteDbContext context) : Repository<Etudia
             .ThenInclude(n => n.Ue)
             .FirstOrDefaultAsync(e => e.Id == idEtudiant);
     }
+
+    public async Task<List<Etudiant>> FindEtudiantsSuivantUeAsync(long ueId)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(ueId);
+        ArgumentNullException.ThrowIfNull(Context.Etudiants);
+
+        return await Context.Etudiants
+            .Include(e => e.ParcoursSuivi!)
+            .ThenInclude(p => p.UesEnseignees)
+            .Where(e =>
+                e.ParcoursSuivi != null &&
+                e.ParcoursSuivi.UesEnseignees != null &&
+                e.ParcoursSuivi.UesEnseignees.Any(u => u.Id == ueId))
+            .ToListAsync();
+    }
 }

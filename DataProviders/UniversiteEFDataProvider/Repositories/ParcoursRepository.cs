@@ -86,6 +86,16 @@ public class ParcoursRepository(UniversiteDbContext context) : Repository<Parcou
         return parcours;
     }
 
+    public Task<Parcours> AddUeAsync(Parcours parcours, Ue ue)
+    {
+        ArgumentNullException.ThrowIfNull(parcours);
+        ArgumentNullException.ThrowIfNull(ue);
+        return AddUeAsync(parcours.Id, ue.Id);
+    }
+
+    public Task<Parcours> AddUeAsync(long idParcours, long idUe) =>
+        AddUeAsync(idParcours, new[] { idUe });
+
     private async Task<Parcours> LoadParcoursWithEtudiantsAsync(long idParcours) =>
         await Context.Parcours
             .Include(p => p.Inscrits)
