@@ -37,7 +37,10 @@ public class CreateParcoursUseCase(IRepositoryFactory factory)
         var repo = factory.ParcoursRepository();   // CORRECTION IMPORTANTE
 
         // 1. nom ≥ 3 caractères
-
+        if (parcours.NomParcours.Trim().Length < 3)
+        {
+            throw new InvalidNomParcoursException(parcours.NomParcours);
+        }
 
         // 2. vérifier doublon
         var existants = await repo.FindByConditionAsync(

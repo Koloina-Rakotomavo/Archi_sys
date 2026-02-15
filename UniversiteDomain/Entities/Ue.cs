@@ -11,6 +11,9 @@ public class Ue
 
     // ManyToMany : une Ue est enseignée dans plusieurs parcours
     public List<Parcours>? EnseigneeDans { get; set; } = new();
+    
+    // OneToMany : une UE possède plusieurs notes
+    public List<Note>? Notes { get; set; } = new();
 
     public override string ToString()
     {
