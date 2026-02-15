@@ -5,14 +5,6 @@ using UniversiteDomain.Entities;
 using UniversiteDomain.UseCases.ParcoursUseCases.Create;
 using UniversiteDomain.UseCases.ParcoursUseCases.EtudiantDansParcours;
 
-namespace UniversiteDomain.UseCases.ParcoursUseCases.EtudiantDansParcours
-{
-}
-
-namespace UniversiteDomain.UseCases.ParcoursUseCases.Create
-{
-}
-
 namespace UniversiteDomainUnitTests
 {
     public class ParcoursUnitTest
@@ -40,7 +32,7 @@ namespace UniversiteDomainUnitTests
             // On dit à ce mock que le parcours n'existe pas déjà
             mockParcours
                 .Setup(repo=>repo.FindByConditionAsync(p=>p.Id.Equals(idParcours)))
-                .ReturnsAsync((List<Parcours>)null);
+                .ReturnsAsync(new List<Parcours>());
             // On lui dit que l'ajout d'un étudiant renvoie un étudiant avec l'Id 1
             Parcours parcoursFinal =new Parcours{Id=idParcours,NomParcours= nomParcours, AnneeFormation = anneFormation};
             mockParcours.Setup(repo=>repo.CreateAsync(parcoursAvant)).ReturnsAsync(parcoursFinal);
@@ -81,7 +73,13 @@ namespace UniversiteDomainUnitTests
             parcourses.Add(parcours);
         
             List<Parcours> parcoursFinaux = new List<Parcours>();
-            Parcours parcoursFinal = new Parcours{Id=3, NomParcours = "Ue 3", AnneeFormation = 1};
+            Parcours parcoursFinal = new Parcours
+            {
+                Id = 3,
+                NomParcours = "Ue 3",
+                AnneeFormation = 1,
+                Inscrits = new List<Etudiant>()
+            };
             parcoursFinal.Inscrits.Add(etudiant);
             parcoursFinaux.Add(parcoursFinal);
         
@@ -105,8 +103,8 @@ namespace UniversiteDomainUnitTests
             // Vérification du résultat
             Assert.That(parcoursTest.Id, Is.EqualTo(parcoursFinal.Id));
             Assert.That(parcoursTest.Inscrits, Is.Not.Null);
-            Assert.That(parcoursTest.Inscrits.Count, Is.EqualTo(1));
-            Assert.That(parcoursTest.Inscrits[0].Id, Is.EqualTo(idEtudiant));
+            Assert.That(parcoursTest.Inscrits?.Count, Is.EqualTo(1));
+            Assert.That(parcoursTest.Inscrits?[0].Id, Is.EqualTo(idEtudiant));
         }
     }
 }
