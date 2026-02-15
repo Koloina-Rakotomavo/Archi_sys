@@ -6,7 +6,7 @@ namespace UniversiteDomain.UseCases.SecurityUseCases.Get;
 public class IsInRoleUseCase(IRepositoryFactory repositoryFactory)
 {
     public bool IsAuthorized(string role) =>
-        role is Roles.Administrateur or Roles.Responsable or Roles.Scolarite;
+        role is Roles.Administrateur or Roles.Responsable or Roles.Scolarite or Roles.Etudiant;
 
     public async Task<bool> ExecuteAsync(string email, string roleName)
     {

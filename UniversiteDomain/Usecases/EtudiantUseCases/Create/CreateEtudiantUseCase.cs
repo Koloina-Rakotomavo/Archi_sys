@@ -7,6 +7,9 @@ namespace UniversiteDomain.UseCases.EtudiantUseCases.Create;
 
 public class CreateEtudiantUseCase(IEtudiantRepository etudiantRepository)
 {
+    public bool IsAuthorized(string role) =>
+        role == Roles.Administrateur || role == Roles.Responsable || role == Roles.Scolarite;
+
     public async Task<Etudiant> ExecuteAsync(string numEtud, string nom, string prenom, string email)
     {
         var etudiant = new Etudiant{NumEtud = numEtud, Nom = nom, Prenom = prenom, Email = email};
@@ -16,7 +19,7 @@ public class CreateEtudiantUseCase(IEtudiantRepository etudiantRepository)
     {
         await CheckBusinessRules(etudiant);
         Etudiant et = await etudiantRepository.CreateAsync(etudiant);
-        etudiantRepository.SaveChangesAsync().Wait();
+        await etudiantRepository.SaveChangesAsync();
         return et;
     }
     private async Task CheckBusinessRules(Etudiant etudiant)

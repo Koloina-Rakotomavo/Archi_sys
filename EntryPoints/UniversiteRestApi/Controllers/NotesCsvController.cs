@@ -23,12 +23,14 @@ public class NotesCsvController(IRepositoryFactory repositoryFactory) : Controll
         var useCase = new GetUeNotesTemplateUseCase(repositoryFactory);
         var rows = await useCase.ExecuteAsync(idUe);
 
+        var csvConfig = new CsvConfiguration(CultureInfo.GetCultureInfo("fr-FR"))
+        {
+            Delimiter = ";"
+        };
+
         await using var memoryStream = new MemoryStream();
         await using (var writer = new StreamWriter(memoryStream, leaveOpen: true))
-        await using (var csv = new CsvWriter(writer, new CsvConfiguration(CultureInfo.InvariantCulture)
-                   {
-                       Delimiter = ";"
-                   }))
+        await using (var csv = new CsvWriter(writer, csvConfig))
         {
             await csv.WriteRecordsAsync(rows);
         }
@@ -38,22 +40,33 @@ public class NotesCsvController(IRepositoryFactory repositoryFactory) : Controll
     }
 
     [HttpPost("import/{idUe:long}")]
-    public async Task<IActionResult> Import(long idUe, IFormFile file)
+    public async Task<IActionResult> Import(long idUe, [FromForm] IFormFile file)
     {
         if (file is null || file.Length == 0)
             return BadRequest("Fichier CSV manquant.");
+        if (!file.FileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
+            return BadRequest("Le fichier doit etre au format .csv.");
 
         List<UeNoteCsvRow> rows;
-        await using (var stream = file.OpenReadStream())
-        using (var reader = new StreamReader(stream))
-        using (var csv = new CsvReader(reader, new CsvConfiguration(CultureInfo.InvariantCulture)
-               {
-                   Delimiter = ";",
-                   HeaderValidated = null,
-                   MissingFieldFound = null
-               }))
+        var csvConfig = new CsvConfiguration(CultureInfo.GetCultureInfo("fr-FR"))
         {
+            Delimiter = ";",
+            HeaderValidated = null,
+            MissingFieldFound = null,
+            BadDataFound = null,
+            TrimOptions = TrimOptions.Trim
+        };
+
+        try
+        {
+            await using var stream = file.OpenReadStream();
+            using var reader = new StreamReader(stream);
+            using var csv = new CsvReader(reader, csvConfig);
             rows = csv.GetRecords<UeNoteCsvRow>().ToList();
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { errors = new[] { $"CSV invalide: {ex.Message}" } });
         }
 
         var useCase = new ImportUeNotesUseCase(repositoryFactory);

@@ -5,7 +5,8 @@ namespace UniversiteDomain.UseCases.SecurityUseCases.Create;
 
 public class CreateUniversiteRoleUseCase(IRepositoryFactory repositoryFactory)
 {
-    public bool IsAuthorized(string role) => role == Roles.Administrateur;
+    public bool IsAuthorized(string role) =>
+        role is Roles.Administrateur or Roles.Responsable or Roles.Scolarite;
 
     public async Task<IUniversiteRole> ExecuteAsync(string roleName)
     {

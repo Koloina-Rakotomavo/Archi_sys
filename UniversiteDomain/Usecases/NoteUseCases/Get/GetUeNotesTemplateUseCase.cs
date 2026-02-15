@@ -7,6 +7,8 @@ namespace UniversiteDomain.UseCases.NoteUseCases.Get;
 
 public class GetUeNotesTemplateUseCase(IRepositoryFactory repositoryFactory)
 {
+    public bool IsAuthorized(string role) => role == Roles.Scolarite;
+
     public async Task<List<UeNoteCsvRow>> ExecuteAsync(long idUe)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(idUe);
