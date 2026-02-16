@@ -4,7 +4,7 @@ using UniversiteDomain.UseCases.ParcoursUseCases.Create;
 using UniversiteDomain.UseCases.ParcoursUseCases.EtudiantDansParcours;
 using UniversiteDomain.UseCases.ParcoursUseCases.UeDansParcours;
 using UniversiteDomain.UseCases.SecurityUseCases.Create;
-using UniversiteDomain.UseCases.UeUseCases;
+using UniversiteDomain.UseCases.UeUseCases.Create;
 using UniversiteDomain.DataAdapters.DataAdaptersFactory;
 
 namespace UniversiteDomain.JeuxDeDonnees;
@@ -18,8 +18,8 @@ public class BasicBdBuilder(IRepositoryFactory repositoryFactory) : BdBuilder(re
     protected override async Task BuildMetierAsync()
     {
         var createParcours = new CreateParcoursUseCase(RepositoryFactory);
-        var createEtudiant = new CreateEtudiantUseCase(RepositoryFactory.EtudiantRepository());
-        var createUe = new CreateUeUseCase(RepositoryFactory.UeRepository());
+        var createEtudiant = new CreateEtudiantUseCase(RepositoryFactory);
+        var createUe = new CreateUeUseCase(RepositoryFactory);
         var addEtudiantDansParcours = new AddEtudiantDansParcoursUseCase(RepositoryFactory);
         var addUeDansParcours = new AddUeDansParcoursUseCase(RepositoryFactory);
 

@@ -29,8 +29,19 @@ public class ParcoursController(IRepositoryFactory repositoryFactory) : Controll
     public async Task<IActionResult> Create([FromBody] CreateParcoursRequest request)
     {
         var useCase = new CreateParcoursUseCase(repositoryFactory);
-        var created = await useCase.ExecuteAsync(request.NomParcours, request.AnneeFormation);
-        return Ok(created);
+        var role = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value ?? string.Empty;
+        if (!useCase.IsAuthorized(role))
+            return Forbid();
+
+        try
+        {
+            var created = await useCase.ExecuteAsync(request.NomParcours, request.AnneeFormation);
+            return CreatedAtAction(nameof(FindAll), new { id = created.Id }, created);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
 
     [HttpPost("{idParcours:long}/etudiants")]

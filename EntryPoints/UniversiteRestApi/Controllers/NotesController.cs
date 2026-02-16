@@ -7,6 +7,7 @@ using UniversiteDomain.DataAdapters.DataAdaptersFactory;
 using UniversiteDomain.Dtos.Notes;
 using UniversiteDomain.Entities;
 using UniversiteDomain.Exceptions.NoteExceptions;
+using UniversiteDomain.Exceptions.UeExceptions;
 using UniversiteDomain.UseCases.NoteUseCases.Get;
 using UniversiteDomain.UseCases.NoteUseCases.Update;
 
@@ -21,7 +22,15 @@ public class NotesController(IRepositoryFactory repositoryFactory) : ControllerB
     public async Task<IActionResult> ExportTemplate(long idUe)
     {
         var useCase = new GetUeNotesTemplateUseCase(repositoryFactory);
-        var rows = await useCase.ExecuteAsync(idUe);
+        List<UeNoteCsvRow> rows;
+        try
+        {
+            rows = await useCase.ExecuteAsync(idUe);
+        }
+        catch (UeNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
 
         var csvConfig = new CsvConfiguration(CultureInfo.GetCultureInfo("fr-FR"))
         {
@@ -72,12 +81,16 @@ public class NotesController(IRepositoryFactory repositoryFactory) : ControllerB
         var useCase = new ImportUeNotesUseCase(repositoryFactory);
         try
         {
-            await useCase.ExecuteAsync(idUe, rows);
-            return Ok(new { message = "Import des notes termine." });
+            var result = await useCase.ExecuteAsync(idUe, rows);
+            return Ok(result);
         }
         catch (CsvImportValidationException ex)
         {
             return BadRequest(new { errors = ex.Errors });
+        }
+        catch (UeNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
         }
     }
 }

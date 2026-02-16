@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using MySqlConnector;
 using UniversiteDomain.DataAdapters.DataAdaptersFactory;
 using UniversiteDomain.JeuxDeDonnees;
 using UniversiteEFDataProvider.Data;
@@ -38,16 +39,19 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+var connectionString = builder.Configuration.GetConnectionString("UniversiteMySql");
+var forceInMemory = builder.Configuration.GetValue("UseInMemoryDatabase", false);
+var canUseMySql = !forceInMemory && !string.IsNullOrWhiteSpace(connectionString) && CanOpenMySqlConnection(connectionString!);
+
 builder.Services.AddDbContext<UniversiteDbContext>(options =>
 {
-    var connectionString = builder.Configuration.GetConnectionString("UniversiteMySql");
-    if (string.IsNullOrWhiteSpace(connectionString))
+    if (canUseMySql)
     {
-        options.UseInMemoryDatabase("UniversiteDb");
+        options.UseMySql(connectionString!, ServerVersion.AutoDetect(connectionString!));
     }
     else
     {
-        options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+        options.UseInMemoryDatabase("UniversiteDb");
     }
 });
 
@@ -114,3 +118,21 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
+
+static bool CanOpenMySqlConnection(string connectionString)
+{
+    try
+    {
+        var builder = new MySqlConnectionStringBuilder(connectionString)
+        {
+            ConnectionTimeout = 3
+        };
+        using var connection = new MySqlConnection(builder.ConnectionString);
+        connection.Open();
+        return true;
+    }
+    catch
+    {
+        return false;
+    }
+}

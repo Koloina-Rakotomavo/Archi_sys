@@ -1,6 +1,7 @@
 ﻿using System.Linq.Expressions;
 using Moq;
 using UniversiteDomain.DataAdapters;
+using UniversiteDomain.DataAdapters.DataAdaptersFactory;
 using UniversiteDomain.Entities;
 using UniversiteDomain.UseCases.EtudiantUseCases.Create;
 
@@ -23,11 +24,9 @@ public class EtudiantUnitTest
         
         // On crée l'étudiant qui doit être ajouté en base
         Etudiant etudiantSansId = new Etudiant{NumEtud=numEtud, Nom = nom, Prenom=prenom, Email=email};
-        //  Créons le mock du repository
-        // On initialise une fausse datasource qui va simuler un EtudiantRepository
         var mock = new Mock<IEtudiantRepository>();
-        // Il faut ensuite aller dans le use case pour voir quelles fonctions simuler
-        // Nous devons simuler FindByCondition et Create
+        var mockFactory = new Mock<IRepositoryFactory>();
+        mockFactory.Setup(f => f.EtudiantRepository()).Returns(mock.Object);
         
         // Simulation de la fonction FindByCondition
         // On dit à ce mock que l'étudiant n'existe pas déjà
@@ -42,11 +41,8 @@ public class EtudiantUnitTest
         Etudiant etudiantCree =new Etudiant{Id=id,NumEtud=numEtud, Nom = nom, Prenom=prenom, Email=email};
         mock.Setup(repoEtudiant=>repoEtudiant.CreateAsync(etudiantSansId)).ReturnsAsync(etudiantCree);
         
-        // On crée le bouchon (un faux etudiantRepository). Il est prêt à être utilisé
-        var fauxEtudiantRepository = mock.Object;
-        
-        // Création du use case en injectant notre faux repository
-        CreateEtudiantUseCase useCase=new CreateEtudiantUseCase(fauxEtudiantRepository);
+        // Création du use case en injectant notre fausse factory
+        CreateEtudiantUseCase useCase=new CreateEtudiantUseCase(mockFactory.Object);
         // Appel du use case
         var etudiantTeste=await useCase.ExecuteAsync(etudiantSansId);
         

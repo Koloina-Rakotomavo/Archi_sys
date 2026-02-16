@@ -30,9 +30,20 @@ public class EtudiantController(IRepositoryFactory repositoryFactory) : Controll
         if (!HasAuthorizedRole())
             return Forbid();
 
-        var useCase = new CreateEtudiantUseCase(repositoryFactory.EtudiantRepository());
-        var created = await useCase.ExecuteAsync(request.NumEtud, request.Nom, request.Prenom, request.Email);
-        return Ok(created);
+        var useCase = new CreateEtudiantUseCase(repositoryFactory);
+        var role = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value ?? string.Empty;
+        if (!useCase.IsAuthorized(role))
+            return Forbid();
+
+        try
+        {
+            var created = await useCase.ExecuteAsync(request.NumEtud, request.Nom, request.Prenom, request.Email);
+            return CreatedAtAction(nameof(FindAll), new { id = created.Id }, created);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
 
     private bool HasAuthorizedRole()

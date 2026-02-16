@@ -40,6 +40,10 @@ public class ImportUeNotesUseCaseTests
                 new() { Id = 2, NumEtud = "E002" }
             });
 
+        mockNoteRepo
+            .Setup(r => r.FindByUeAsync(ueId))
+            .ReturnsAsync(new List<Note>());
+
         var rows = new List<UeNoteCsvRow>
         {
             new() { NumeroUe = "UE101", IntituleUe = "Architecture web", NumEtud = "E001", Note = 15m },
@@ -50,9 +54,8 @@ public class ImportUeNotesUseCaseTests
 
         Assert.ThrowsAsync<CsvImportValidationException>(async () => await useCase.ExecuteAsync(ueId, rows));
 
-        mockNoteRepo.Verify(r => r.CreateAsync(It.IsAny<Note>()), Times.Never);
-        mockNoteRepo.Verify(r => r.UpdateAsync(It.IsAny<Note>()), Times.Never);
-        mockNoteRepo.Verify(r => r.DeleteAsync(It.IsAny<Note>()), Times.Never);
+        mockNoteRepo.Verify(r => r.UpsertManyAsync(It.IsAny<List<Note>>()), Times.Never);
+        mockNoteRepo.Verify(r => r.DeleteManyAsync(It.IsAny<List<(long, long)>>()), Times.Never);
         mockNoteRepo.Verify(r => r.SaveChangesAsync(), Times.Never);
     }
 
@@ -86,32 +89,17 @@ public class ImportUeNotesUseCaseTests
                 new() { Id = 3, NumEtud = "E003" }
             });
 
-        var existingToUpdate = new Note { EtudiantId = 2, UeId = ueId, Valeur = 9m };
-        var existingToDelete = new Note { EtudiantId = 3, UeId = ueId, Valeur = 11m };
-
         mockNoteRepo
-            .Setup(r => r.FindAsync(It.IsAny<object[]>()))
-            .ReturnsAsync((object[] keyValues) =>
+            .Setup(r => r.FindByUeAsync(ueId))
+            .ReturnsAsync(new List<Note>
             {
-                var etudiantId = Convert.ToInt64(keyValues[0]);
-                var ueKey = Convert.ToInt64(keyValues[1]);
-                if (ueKey != ueId)
-                    return null;
-
-                return etudiantId switch
-                {
-                    1 => null,
-                    2 => existingToUpdate,
-                    3 => existingToDelete,
-                    _ => null
-                };
+                new() { EtudiantId = 2, UeId = ueId, Valeur = 9m },
+                new() { EtudiantId = 3, UeId = ueId, Valeur = 11m }
             });
 
-        mockNoteRepo.Setup(r => r.CreateAsync(It.IsAny<Note>()))
-            .ReturnsAsync((Note n) => n);
-        mockNoteRepo.Setup(r => r.UpdateAsync(It.IsAny<Note>()))
+        mockNoteRepo.Setup(r => r.UpsertManyAsync(It.IsAny<List<Note>>()))
             .Returns(Task.CompletedTask);
-        mockNoteRepo.Setup(r => r.DeleteAsync(It.IsAny<Note>()))
+        mockNoteRepo.Setup(r => r.DeleteManyAsync(It.IsAny<List<(long, long)>>()))
             .Returns(Task.CompletedTask);
         mockNoteRepo.Setup(r => r.SaveChangesAsync())
             .Returns(Task.CompletedTask);
@@ -124,22 +112,66 @@ public class ImportUeNotesUseCaseTests
         };
 
         var useCase = new ImportUeNotesUseCase(mockFactory.Object);
-        await useCase.ExecuteAsync(ueId, rows);
+        var result = await useCase.ExecuteAsync(ueId, rows);
 
-        mockNoteRepo.Verify(r => r.CreateAsync(It.Is<Note>(n =>
-            n.EtudiantId == 1 &&
-            n.UeId == ueId &&
-            n.Valeur == 15m)), Times.Once);
+        Assert.That(result.RowsRead, Is.EqualTo(3));
+        Assert.That(result.UpsertedCount, Is.EqualTo(2));
+        Assert.That(result.DeletedCount, Is.EqualTo(1));
 
-        mockNoteRepo.Verify(r => r.UpdateAsync(It.Is<Note>(n =>
-            n.EtudiantId == 2 &&
-            n.UeId == ueId &&
-            n.Valeur == 17.5m)), Times.Once);
+        mockNoteRepo.Verify(r => r.UpsertManyAsync(It.Is<List<Note>>(notes =>
+            notes.Count == 2 &&
+            notes.Any(n => n.EtudiantId == 1 && n.UeId == ueId && n.Valeur == 15m) &&
+            notes.Any(n => n.EtudiantId == 2 && n.UeId == ueId && n.Valeur == 17.5m))), Times.Once);
 
-        mockNoteRepo.Verify(r => r.DeleteAsync(It.Is<Note>(n =>
-            n.EtudiantId == 3 &&
-            n.UeId == ueId)), Times.Once);
+        mockNoteRepo.Verify(r => r.DeleteManyAsync(It.Is<List<(long, long)>>(keys =>
+            keys.Count == 1 &&
+            keys[0].Item1 == 3 &&
+            keys[0].Item2 == ueId)), Times.Once);
 
         mockNoteRepo.Verify(r => r.SaveChangesAsync(), Times.Once);
+    }
+
+    [Test]
+    public void ExecuteAsync_WithMissingStudentRow_ShouldFailAndWriteNothing()
+    {
+        const long ueId = 10;
+
+        var mockFactory = new Mock<IRepositoryFactory>();
+        var mockUeRepo = new Mock<IUeRepository>();
+        var mockEtudiantRepo = new Mock<IEtudiantRepository>();
+        var mockNoteRepo = new Mock<INoteRepository>();
+
+        mockFactory.Setup(f => f.UeRepository()).Returns(mockUeRepo.Object);
+        mockFactory.Setup(f => f.EtudiantRepository()).Returns(mockEtudiantRepo.Object);
+        mockFactory.Setup(f => f.NoteRepository()).Returns(mockNoteRepo.Object);
+
+        mockUeRepo.Setup(r => r.FindAsync(ueId)).ReturnsAsync(new Ue
+        {
+            Id = ueId,
+            NumeroUe = "UE101",
+            Intitule = "Architecture web"
+        });
+
+        mockEtudiantRepo
+            .Setup(r => r.FindByConditionAsync(It.IsAny<Expression<Func<Etudiant, bool>>>()))
+            .ReturnsAsync(new List<Etudiant>
+            {
+                new() { Id = 1, NumEtud = "E001", Nom = "Durand", Prenom = "Alice" },
+                new() { Id = 2, NumEtud = "E002", Nom = "Martin", Prenom = "Leo" }
+            });
+
+        mockNoteRepo.Setup(r => r.FindByUeAsync(ueId)).ReturnsAsync(new List<Note>());
+
+        var rows = new List<UeNoteCsvRow>
+        {
+            new() { NumeroUe = "UE101", IntituleUe = "Architecture web", NumEtud = "E001", Nom = "Durand", Prenom = "Alice", Note = 14m }
+        };
+
+        var useCase = new ImportUeNotesUseCase(mockFactory.Object);
+        Assert.ThrowsAsync<CsvImportValidationException>(async () => await useCase.ExecuteAsync(ueId, rows));
+
+        mockNoteRepo.Verify(r => r.UpsertManyAsync(It.IsAny<List<Note>>()), Times.Never);
+        mockNoteRepo.Verify(r => r.DeleteManyAsync(It.IsAny<List<(long, long)>>()), Times.Never);
+        mockNoteRepo.Verify(r => r.SaveChangesAsync(), Times.Never);
     }
 }

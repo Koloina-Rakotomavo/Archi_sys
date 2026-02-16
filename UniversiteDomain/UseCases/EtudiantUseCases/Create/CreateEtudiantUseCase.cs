@@ -1,11 +1,11 @@
-using UniversiteDomain.DataAdapters;
+using UniversiteDomain.DataAdapters.DataAdaptersFactory;
 using UniversiteDomain.Entities;
 using UniversiteDomain.Exceptions.EtudiantExceptions;
 using UniversiteDomain.Util;
 
 namespace UniversiteDomain.UseCases.EtudiantUseCases.Create;
 
-public class CreateEtudiantUseCase(IEtudiantRepository etudiantRepository)
+public class CreateEtudiantUseCase(IRepositoryFactory repositoryFactory)
 {
     public bool IsAuthorized(string role) =>
         role == Roles.Administrateur || role == Roles.Responsable || role == Roles.Scolarite;
@@ -18,6 +18,7 @@ public class CreateEtudiantUseCase(IEtudiantRepository etudiantRepository)
     public async Task<Etudiant> ExecuteAsync(Etudiant etudiant)
     {
         await CheckBusinessRules(etudiant);
+        var etudiantRepository = repositoryFactory.EtudiantRepository();
         Etudiant et = await etudiantRepository.CreateAsync(etudiant);
         await etudiantRepository.SaveChangesAsync();
         return et;
@@ -27,6 +28,8 @@ public class CreateEtudiantUseCase(IEtudiantRepository etudiantRepository)
         ArgumentNullException.ThrowIfNull(etudiant);
         ArgumentNullException.ThrowIfNull(etudiant.NumEtud);
         ArgumentNullException.ThrowIfNull(etudiant.Email);
+        ArgumentNullException.ThrowIfNull(repositoryFactory);
+        var etudiantRepository = repositoryFactory.EtudiantRepository();
         ArgumentNullException.ThrowIfNull(etudiantRepository);
         
         // On recherche un étudiant avec le même numéro étudiant

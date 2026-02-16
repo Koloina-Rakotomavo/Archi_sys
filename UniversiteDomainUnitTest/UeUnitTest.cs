@@ -1,23 +1,27 @@
 using Moq;
 using NUnit.Framework;
 using System.Linq.Expressions;
+using UniversiteDomain.DataAdapters.DataAdaptersFactory;
 using UniversiteDomain.DataAdapters;
 using UniversiteDomain.Entities;
 using UniversiteDomain.Exceptions.UeExceptions;
-using UniversiteDomain.UseCases.UeUseCases;
+using UniversiteDomain.UseCases.UeUseCases.Create;
 
 namespace UniversiteDomainUnitTests;
 
 public class UeUnitTest
 {
     private Mock<IUeRepository> mockUeRepo;
+    private Mock<IRepositoryFactory> mockFactory;
     private CreateUeUseCase useCase;
 
     [SetUp]
     public void Setup()
     {
         mockUeRepo = new Mock<IUeRepository>();
-        useCase = new CreateUeUseCase(mockUeRepo.Object);
+        mockFactory = new Mock<IRepositoryFactory>();
+        mockFactory.Setup(f => f.UeRepository()).Returns(mockUeRepo.Object);
+        useCase = new CreateUeUseCase(mockFactory.Object);
     }
 
     [Test]

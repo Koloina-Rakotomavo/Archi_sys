@@ -10,7 +10,7 @@ public class ImportUeNotesUseCase(IRepositoryFactory repositoryFactory)
 {
     public bool IsAuthorized(string role) => role == Roles.Scolarite;
 
-    public async Task ExecuteAsync(long idUe, List<UeNoteCsvRow> rows)
+    public async Task<ImportUeNotesResultDto> ExecuteAsync(long idUe, List<UeNoteCsvRow> rows)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(idUe);
         ArgumentNullException.ThrowIfNull(rows);
@@ -26,6 +26,8 @@ public class ImportUeNotesUseCase(IRepositoryFactory repositoryFactory)
         ArgumentNullException.ThrowIfNull(noteRepo);
 
         var ue = await ueRepo.FindAsync(idUe) ?? throw new UeNotFoundException(idUe.ToString());
+        var notesExistantes = await noteRepo.FindByUeAsync(idUe);
+        var notesByEtudiantId = notesExistantes.ToDictionary(n => n.EtudiantId);
 
         // On précharge uniquement les étudiants réellement inscrits à l'UE ciblée.
         var etudiantsInscrits = await etudiantRepo.FindByConditionAsync(e =>
@@ -77,43 +79,66 @@ public class ImportUeNotesUseCase(IRepositoryFactory repositoryFactory)
                 continue;
             }
 
+            if (!string.IsNullOrWhiteSpace(row.Nom) &&
+                !string.Equals(row.Nom.Trim(), etudiant.Nom, StringComparison.OrdinalIgnoreCase))
+            {
+                errors.Add($"Ligne {line}: nom etudiant incoherent pour '{numEtud}'.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(row.Prenom) &&
+                !string.Equals(row.Prenom.Trim(), etudiant.Prenom, StringComparison.OrdinalIgnoreCase))
+            {
+                errors.Add($"Ligne {line}: prenom etudiant incoherent pour '{numEtud}'.");
+            }
+
             if (row.Note is < 0 or > 20)
                 errors.Add($"Ligne {line}: note hors bornes [0,20] pour '{numEtud}' ({row.Note}).");
 
             operations.Add((etudiant.Id, row.Note));
         }
 
+        var missingStudents = etudiantsByNum.Keys.Where(num => !seenNumEtud.Contains(num)).ToList();
+        if (missingStudents.Count > 0)
+        {
+            foreach (var missing in missingStudents)
+                errors.Add($"Etudiant manquant dans le CSV: '{missing}'.");
+        }
+
         if (errors.Count > 0)
             throw new CsvImportValidationException(errors.Distinct().ToList());
 
         // Aucune écriture n'a lieu avant ce point : en cas d'erreur, rien n'est enregistré.
+        var toUpsert = new List<Note>();
+        var toDelete = new List<(long EtudiantId, long UeId)>();
+
         foreach (var (etudiantId, valeur) in operations)
         {
-            var existing = await noteRepo.FindAsync(etudiantId, idUe);
+            notesByEtudiantId.TryGetValue(etudiantId, out var existing);
             if (valeur.HasValue)
             {
-                if (existing is null)
+                toUpsert.Add(new Note
                 {
-                    await noteRepo.CreateAsync(new Note
-                    {
-                        EtudiantId = etudiantId,
-                        UeId = idUe,
-                        Valeur = valeur.Value
-                    });
-                }
-                else
-                {
-                    existing.Valeur = valeur.Value;
-                    await noteRepo.UpdateAsync(existing);
-                }
+                    EtudiantId = etudiantId,
+                    UeId = idUe,
+                    Valeur = valeur.Value
+                });
             }
             else if (existing is not null)
             {
                 // Case vide dans le CSV : on supprime la note si elle existait déjà.
-                await noteRepo.DeleteAsync(existing);
+                toDelete.Add((etudiantId, idUe));
             }
         }
 
+        await noteRepo.UpsertManyAsync(toUpsert);
+        await noteRepo.DeleteManyAsync(toDelete);
         await noteRepo.SaveChangesAsync();
+
+        return new ImportUeNotesResultDto
+        {
+            RowsRead = rows.Count,
+            UpsertedCount = toUpsert.Count,
+            DeletedCount = toDelete.Count
+        };
     }
 }

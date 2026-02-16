@@ -6,6 +6,9 @@ namespace UniversiteDomain.UseCases.ParcoursUseCases.Create;
 
 public class CreateParcoursUseCase(IRepositoryFactory factory)
 {
+    public bool IsAuthorized(string role) =>
+        role == Roles.Administrateur || role == Roles.Responsable || role == Roles.Scolarite;
+
     public async Task<Parcours> ExecuteAsync(string nomParcours, int anneeFormation)
     {
         var parcours = new Parcours
@@ -21,10 +24,10 @@ public class CreateParcoursUseCase(IRepositoryFactory factory)
     {
         await CheckBusinessRules(parcours);
 
-        var repo = factory.ParcoursRepository();   // CORRECTION IMPORTANTE
+        var repo = factory.ParcoursRepository();
 
         var created = await repo.CreateAsync(parcours);
-        await factory.SaveChangesAsync();         // on utilise la factory pour commit
+        await factory.SaveChangesAsync();
 
         return created;
     }
@@ -34,22 +37,24 @@ public class CreateParcoursUseCase(IRepositoryFactory factory)
         ArgumentNullException.ThrowIfNull(parcours);
         ArgumentNullException.ThrowIfNull(parcours.NomParcours);
 
-        var repo = factory.ParcoursRepository();   // CORRECTION IMPORTANTE
+        var repo = factory.ParcoursRepository();
+        var nomParcours = parcours.NomParcours.Trim();
 
         // 1. nom ≥ 3 caractères
-        if (parcours.NomParcours.Trim().Length < 3)
+        if (nomParcours.Length < 3)
         {
-            throw new InvalidNomParcoursException(parcours.NomParcours);
+            throw new InvalidNomParcoursException(nomParcours);
         }
 
-        // 2. vérifier doublon
+        // 2. vérifier doublon sur (NomParcours, AnneeFormation)
         var existants = await repo.FindByConditionAsync(
-            p => p.NomParcours.Equals(parcours.NomParcours)
+            p => p.NomParcours.ToLower().Equals(nomParcours.ToLower()) &&
+                 p.AnneeFormation.Equals(parcours.AnneeFormation)
         );
 
         if (existants is { Count: > 0 })
         {
-            throw new DuplicateNomParcoursException(parcours.NomParcours);
+            throw new DuplicateNomParcoursException($"{nomParcours} (annee {parcours.AnneeFormation})");
         }
 
         // 3. année de formation valide

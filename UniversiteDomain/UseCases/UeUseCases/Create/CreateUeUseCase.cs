@@ -1,17 +1,13 @@
-using UniversiteDomain.DataAdapters;
+using UniversiteDomain.DataAdapters.DataAdaptersFactory;
 using UniversiteDomain.Entities;
 using UniversiteDomain.Exceptions.UeExceptions;
 
-namespace UniversiteDomain.UseCases.UeUseCases;
+namespace UniversiteDomain.UseCases.UeUseCases.Create;
 
-public class CreateUeUseCase
+public class CreateUeUseCase(IRepositoryFactory repositoryFactory)
 {
-    private readonly IUeRepository ueRepository;
-
-    public CreateUeUseCase(IUeRepository repo)
-    {
-        ueRepository = repo;
-    }
+    public bool IsAuthorized(string role) =>
+        role == Roles.Administrateur || role == Roles.Responsable || role == Roles.Scolarite;
 
     public async Task<Ue> ExecuteAsync(string numeroUe, string intitule)
     {
@@ -28,6 +24,7 @@ public class CreateUeUseCase
     {
         await CheckBusinessRules(ue);
 
+        var ueRepository = repositoryFactory.UeRepository();
         var created = await ueRepository.CreateAsync(ue);
         await ueRepository.SaveChangesAsync();
 
@@ -39,6 +36,8 @@ public class CreateUeUseCase
         ArgumentNullException.ThrowIfNull(ue);
         ArgumentNullException.ThrowIfNull(ue.NumeroUe);
         ArgumentNullException.ThrowIfNull(ue.Intitule);
+        ArgumentNullException.ThrowIfNull(repositoryFactory);
+        var ueRepository = repositoryFactory.UeRepository();
 
         // 1. Intitulé ≥ 3 caractères
         if (ue.Intitule.Length < 3)
