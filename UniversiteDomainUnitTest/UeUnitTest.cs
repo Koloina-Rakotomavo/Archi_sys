@@ -8,7 +8,7 @@ using UniversiteDomain.UseCases.UeUseCases;
 
 namespace UniversiteDomainUnitTests;
 
-public class UeUnitTests
+public class UeUnitTest
 {
     private Mock<IUeRepository> mockUeRepo;
     private CreateUeUseCase useCase;

@@ -3,7 +3,7 @@ using UniversiteDomain.DataAdapters.DataAdaptersFactory;
 using UniversiteEFDataProvider.Data;
 using UniversiteEFDataProvider.Repositories;
 
-namespace UniversiteEFDataProvider.DataAdaptersFactory;
+namespace UniversiteEFDataProvider.RepositoryFactories;
 
 public class RepositoryFactory(UniversiteDbContext context) : IRepositoryFactory
 {

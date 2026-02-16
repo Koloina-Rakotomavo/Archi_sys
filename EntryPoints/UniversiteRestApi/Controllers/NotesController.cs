@@ -15,7 +15,7 @@ namespace UniversiteRestApi.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Roles = Roles.Scolarite)]
-public class NotesCsvController(IRepositoryFactory repositoryFactory) : ControllerBase
+public class NotesController(IRepositoryFactory repositoryFactory) : ControllerBase
 {
     [HttpGet("template/{idUe:long}")]
     public async Task<IActionResult> ExportTemplate(long idUe)

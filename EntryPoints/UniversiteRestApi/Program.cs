@@ -7,7 +7,7 @@ using Microsoft.OpenApi.Models;
 using UniversiteDomain.DataAdapters.DataAdaptersFactory;
 using UniversiteDomain.JeuxDeDonnees;
 using UniversiteEFDataProvider.Data;
-using UniversiteEFDataProvider.DataAdaptersFactory;
+using UniversiteEFDataProvider.RepositoryFactories;
 using UniversiteEFDataProvider.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
