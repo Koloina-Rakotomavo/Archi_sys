@@ -19,10 +19,7 @@ public class GetUeNotesTemplateUseCase(IRepositoryFactory repositoryFactory)
 
         var ue = await ueRepo.FindAsync(idUe) ?? throw new UeNotFoundException(idUe.ToString());
 
-        var etudiants = await etudiantRepo.FindByConditionAsync(e =>
-            e.ParcoursSuivi != null &&
-            e.ParcoursSuivi.UesEnseignees != null &&
-            e.ParcoursSuivi.UesEnseignees.Any(u => u.Id == idUe));
+        var etudiants = await etudiantRepo.FindEtudiantsSuivantUeAsync(idUe);
 
         var rows = new List<UeNoteCsvRow>();
         foreach (var etudiant in etudiants.OrderBy(e => e.NumEtud))

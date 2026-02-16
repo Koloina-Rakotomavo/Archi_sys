@@ -32,7 +32,8 @@ public class EtudiantRepository(UniversiteDbContext context) : Repository<Etudia
     {
         ArgumentNullException.ThrowIfNull(Context.Etudiants);
         return await Context.Etudiants
-            .Include(e => e.ParcoursSuivi)
+            .Include(e => e.ParcoursSuivi!)
+            .ThenInclude(p => p.UesEnseignees)
             .Include(e => e.NotesObtenues!)
             .ThenInclude(n => n.Ue)
             .FirstOrDefaultAsync(e => e.Id == idEtudiant);
@@ -43,13 +44,16 @@ public class EtudiantRepository(UniversiteDbContext context) : Repository<Etudia
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(ueId);
         ArgumentNullException.ThrowIfNull(Context.Etudiants);
 
-        return await Context.Etudiants
+        var etudiants = await Context.Etudiants
             .Include(e => e.ParcoursSuivi!)
             .ThenInclude(p => p.UesEnseignees)
+            .ToListAsync();
+
+        return etudiants
             .Where(e =>
                 e.ParcoursSuivi != null &&
                 e.ParcoursSuivi.UesEnseignees != null &&
                 e.ParcoursSuivi.UesEnseignees.Any(u => u.Id == ueId))
-            .ToListAsync();
+            .ToList();
     }
 }

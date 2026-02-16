@@ -30,10 +30,7 @@ public class ImportUeNotesUseCase(IRepositoryFactory repositoryFactory)
         var notesByEtudiantId = notesExistantes.ToDictionary(n => n.EtudiantId);
 
         // On précharge uniquement les étudiants réellement inscrits à l'UE ciblée.
-        var etudiantsInscrits = await etudiantRepo.FindByConditionAsync(e =>
-            e.ParcoursSuivi != null &&
-            e.ParcoursSuivi.UesEnseignees != null &&
-            e.ParcoursSuivi.UesEnseignees.Any(u => u.Id == idUe));
+        var etudiantsInscrits = await etudiantRepo.FindEtudiantsSuivantUeAsync(idUe);
 
         var etudiantsByNum = etudiantsInscrits
             .Where(e => !string.IsNullOrWhiteSpace(e.NumEtud))

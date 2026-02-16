@@ -1,4 +1,3 @@
-using System.Linq.Expressions;
 using Moq;
 using UniversiteDomain.DataAdapters;
 using UniversiteDomain.DataAdapters.DataAdaptersFactory;
@@ -33,7 +32,7 @@ public class ImportUeNotesUseCaseTests
         });
 
         mockEtudiantRepo
-            .Setup(r => r.FindByConditionAsync(It.IsAny<Expression<Func<Etudiant, bool>>>()))
+            .Setup(r => r.FindEtudiantsSuivantUeAsync(ueId))
             .ReturnsAsync(new List<Etudiant>
             {
                 new() { Id = 1, NumEtud = "E001" },
@@ -81,7 +80,7 @@ public class ImportUeNotesUseCaseTests
         });
 
         mockEtudiantRepo
-            .Setup(r => r.FindByConditionAsync(It.IsAny<Expression<Func<Etudiant, bool>>>()))
+            .Setup(r => r.FindEtudiantsSuivantUeAsync(ueId))
             .ReturnsAsync(new List<Etudiant>
             {
                 new() { Id = 1, NumEtud = "E001" },
@@ -153,7 +152,7 @@ public class ImportUeNotesUseCaseTests
         });
 
         mockEtudiantRepo
-            .Setup(r => r.FindByConditionAsync(It.IsAny<Expression<Func<Etudiant, bool>>>()))
+            .Setup(r => r.FindEtudiantsSuivantUeAsync(ueId))
             .ReturnsAsync(new List<Etudiant>
             {
                 new() { Id = 1, NumEtud = "E001", Nom = "Durand", Prenom = "Alice" },

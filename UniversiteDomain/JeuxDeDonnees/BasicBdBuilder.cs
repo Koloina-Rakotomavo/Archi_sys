@@ -1,5 +1,6 @@
 using UniversiteDomain.Entities;
 using UniversiteDomain.UseCases.EtudiantUseCases.Create;
+using UniversiteDomain.UseCases.NoteUseCases.Create;
 using UniversiteDomain.UseCases.ParcoursUseCases.Create;
 using UniversiteDomain.UseCases.ParcoursUseCases.EtudiantDansParcours;
 using UniversiteDomain.UseCases.ParcoursUseCases.UeDansParcours;
@@ -20,6 +21,7 @@ public class BasicBdBuilder(IRepositoryFactory repositoryFactory) : BdBuilder(re
         var createParcours = new CreateParcoursUseCase(RepositoryFactory);
         var createEtudiant = new CreateEtudiantUseCase(RepositoryFactory);
         var createUe = new CreateUeUseCase(RepositoryFactory);
+        var createNote = new CreateNoteUseCase(RepositoryFactory);
         var addEtudiantDansParcours = new AddEtudiantDansParcoursUseCase(RepositoryFactory);
         var addUeDansParcours = new AddUeDansParcoursUseCase(RepositoryFactory);
 
@@ -43,25 +45,9 @@ public class BasicBdBuilder(IRepositoryFactory repositoryFactory) : BdBuilder(re
         await addEtudiantDansParcours.ExecuteAsync(miage1.Id, new[] { etudiants[0].Id, etudiants[1].Id });
         await addEtudiantDansParcours.ExecuteAsync(miage2.Id, etudiants[2].Id);
 
-        await RepositoryFactory.NoteRepository().CreateAsync(new Note
-        {
-            EtudiantId = etudiants[0].Id,
-            UeId = ueWeb.Id,
-            Valeur = 14.5m
-        });
-        await RepositoryFactory.NoteRepository().CreateAsync(new Note
-        {
-            EtudiantId = etudiants[1].Id,
-            UeId = ueWeb.Id,
-            Valeur = 12.0m
-        });
-        await RepositoryFactory.NoteRepository().CreateAsync(new Note
-        {
-            EtudiantId = etudiants[2].Id,
-            UeId = ueData.Id,
-            Valeur = 16.0m
-        });
-        await RepositoryFactory.NoteRepository().SaveChangesAsync();
+        await createNote.ExecuteAsync(etudiants[0].Id, ueWeb.Id, 14.5m);
+        await createNote.ExecuteAsync(etudiants[1].Id, ueWeb.Id, 12.0m);
+        await createNote.ExecuteAsync(etudiants[2].Id, ueData.Id, 16.0m);
     }
 
     protected override async Task BuildSecuriteAsync()
